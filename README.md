@@ -309,6 +309,52 @@ WEBHOOK_SECRET=your_webhook_secret
 
 The plugin includes automatic retry with exponential backoff for rate-limited requests. Adjust `maxRetries` and `retryDelayMs` in config if needed.
 
+## Security Considerations
+
+When connecting a Webex bot to OpenClaw, keep these security implications in mind:
+
+### Access Control
+
+- **DM Policy**: The `dmPolicy` setting controls who can interact with your bot:
+  - `allow`: Anyone can message the bot and receive responses (use with caution)
+  - `deny`: The bot won't respond to direct messages
+  - `allowlisted`: Only users in the `allowFrom` list receive responses
+- **Recommendation**: Use `allowlisted` in production and explicitly specify trusted users
+
+### Bot Token Permissions
+
+- The bot access token can read messages sent to the bot and send replies
+- Keep your token secret — never commit it to version control
+- Rotate tokens periodically via the [Webex Developer Portal](https://developer.webex.com)
+
+### Webhook Security
+
+- **Always use a webhook secret** in production to verify incoming requests
+- The `webhookSecret` enables HMAC-SHA1 signature verification
+- Without verification, attackers could send fake webhook payloads to your endpoint
+
+### Network Exposure
+
+- Your webhook endpoint must be publicly accessible for Webex to deliver messages
+- Use HTTPS in production (required by Webex)
+- Consider IP allowlisting if your infrastructure supports it
+- For development, tools like ngrok create temporary public URLs
+
+### OpenClaw Agent Access
+
+- Messages received by the bot flow through your OpenClaw agent
+- The agent has access to whatever tools you've configured (file access, web browsing, etc.)
+- Treat bot conversations with the same security considerations as direct OpenClaw access
+- Review your agent's tool permissions and workspace access
+
+### Best Practices
+
+1. Start with `dmPolicy: 'deny'` or `dmPolicy: 'allowlisted'` and explicitly allow trusted users
+2. Always configure a `webhookSecret` for production deployments
+3. Monitor bot activity through Webex admin tools and OpenClaw logs
+4. Use separate bots for development and production environments
+5. Regularly audit the `allowFrom` list
+
 ## License
 
 MIT
