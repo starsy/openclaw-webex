@@ -1,0 +1,33 @@
+{
+  "id": "webex",
+  "name": "Webex Channel",
+  "description": "Cisco Webex messaging integration for OpenClaw",
+  "channels": ["webex"],
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {}
+  },
+  "uiHints": {
+    "token": {
+      "label": "Bot Access Token",
+      "sensitive": true,
+      "placeholder": "Your Webex bot token"
+    },
+    "webhookUrl": {
+      "label": "Webhook URL",
+      "placeholder": "https://your-domain.com/webhooks/webex"
+    },
+    "webhookSecret": {
+      "label": "Webhook Secret",
+      "sensitive": true,
+      "placeholder": "Optional secret for webhook verification"
+    },
+    "dmPolicy": {
+      "label": "DM Policy"
+    },
+    "allowFrom": {
+      "label": "Allowed Senders"
+    }
+  }
+}
