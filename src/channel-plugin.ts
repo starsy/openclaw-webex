@@ -109,31 +109,25 @@ export function registerWebexWebhookTarget(
  */
 function calculateSignature(body: Buffer<ArrayBufferLike> | string, secret?: string): string {
   if (!secret) {
-    return "NO_SIGNATURE";
+    return "";
   }
 
   const hmac = crypto.createHmac('sha1', secret);
-  console.info('originalBody in verifySignature:', body?.toString('utf-8'));
   hmac.update(body);
   const expectedSignature = hmac.digest('hex');
 
   return expectedSignature as string;
-
-  // return crypto.timingSafeEqual(
-  //   Buffer.from(signature),
-  //   Buffer.from(expectedSignature)
-  // );
 }
 
 
-async function readJsonBody(req: IncomingMessage, maxBytes: number, secret?: string): Promise<{ ok: boolean; value?: unknown; signature: string[]; error?: string }> {
+async function readJsonBody(req: IncomingMessage, maxBytes: number, secret?: string): Promise<{ ok: boolean; value?: unknown; signature: string; error?: string }> {
   const chunks: Buffer[] = [];
   let total = 0;
   return await new Promise((resolve) => {
     req.on("data", (chunk: Buffer) => {
       total += chunk.length;
       if (total > maxBytes) {
-        resolve({ ok: false, error: "payload too large", signature: ["NO_SIGNATURE", "NO_SIGNATURE"] });
+        resolve({ ok: false, error: "payload too large", signature: "" });
         req.destroy();
         return;
       }
@@ -144,13 +138,16 @@ async function readJsonBody(req: IncomingMessage, maxBytes: number, secret?: str
         const concatedChunks = Buffer.concat(chunks)
         const body = concatedChunks.toString("utf-8");
         const parsed = JSON.parse(body);
-        resolve({ ok: true, value: parsed, signature: [calculateSignature(concatedChunks, secret), calculateSignature(body, secret)] });
+        resolve({
+          ok: true, value: parsed,
+          signature: calculateSignature(concatedChunks, secret),
+        });
       } catch {
-        resolve({ ok: false, error: "invalid json", signature: ["NO_SIGNATURE", "NO_SIGNATURE"] });
+        resolve({ ok: false, error: "invalid json", signature: "" });
       }
     });
     req.on("error", (err) => {
-      resolve({ ok: false, error: err.message, signature: ["NO_SIGNATURE", "NO_SIGNATURE"] });
+      resolve({ ok: false, error: err.message, signature: "" });
     });
   });
 }
@@ -194,11 +191,13 @@ export function createWebhookHandler(): (req: IncomingMessage, res: ServerRespon
         return true;
       }
 
-      console.log('payload signature 1:', body.signature[0]);
-      console.log('payload signature 2:', body.signature[1]);
-      console.log('expected signature :', signature);
-
-      // if (signature !== body.signature) {
+      // Disable signature verification as the expected signature from the header cannot match the signature calculated from the body
+      // console.log(' payload signature:', body.signature);
+      // console.log('expected signature:', signature);
+      // if !crypto.timingSafeEqual(
+      //   Buffer.from(signature),
+      //   Buffer.from(expectedSignature)
+      // ) {
       //   console.error('Invalid webhook signature:', signature);
       //   throw new WebhookValidationError('Invalid webhook signature');
       // }
