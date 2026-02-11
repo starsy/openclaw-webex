@@ -508,7 +508,11 @@ export const webexPlugin: ChannelPlugin<ResolvedWebexAccount> = {
     deliveryMode: "direct",
     textChunkLimit: 7000, // Webex has a 7439 byte limit
 
-    sendText: async ({ to, text, account, replyToId }) => {
+    sendText: async ({ cfg, to, text, accountId, replyToId }) => {
+      const account = resolveWebexAccount({
+        cfg: cfg as CoreConfig,
+        accountId: accountId ?? DEFAULT_ACCOUNT_ID,
+      });
       const sender = new WebexSender(account.config);
 
       const result = await sender.send({
@@ -524,7 +528,11 @@ export const webexPlugin: ChannelPlugin<ResolvedWebexAccount> = {
       };
     },
 
-    sendMedia: async ({ to, text, mediaUrl, account, replyToId }) => {
+    sendMedia: async ({ cfg, to, text, mediaUrl, accountId, replyToId }) => {
+      const account = resolveWebexAccount({
+        cfg: cfg as CoreConfig,
+        accountId: accountId ?? DEFAULT_ACCOUNT_ID,
+      });
       const sender = new WebexSender(account.config);
 
       const result = await sender.send({

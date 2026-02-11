@@ -173,14 +173,15 @@ declare module "openclaw/plugin-sdk" {
   }
 
   export interface ChannelOutboundAdapter<TAccount = unknown> {
-    deliveryMode: "direct" | "queued";
+    deliveryMode: "direct" | "gateway" | "hybrid";
     chunker?(text: string, limit: number): string[];
     chunkerMode?: "markdown" | "text";
     textChunkLimit?: number;
     sendText(opts: {
+      cfg: unknown;
       to: string;
       text: string;
-      account: TAccount;
+      accountId?: string | null;
       deps?: unknown;
       replyToId?: string;
       threadId?: string | number;
@@ -190,10 +191,11 @@ declare module "openclaw/plugin-sdk" {
       roomId?: string;
     }>;
     sendMedia?(opts: {
+      cfg: unknown;
       to: string;
       text?: string;
       mediaUrl?: string;
-      account: TAccount;
+      accountId?: string | null;
       deps?: unknown;
       replyToId?: string;
       threadId?: string | number;
