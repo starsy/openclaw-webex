@@ -37,21 +37,16 @@ export class WebexWebhookHandler {
     this.botId = botInfo.id;
   }
 
+  getConfig(): WebexChannelConfig {
+    return this.config;
+  }
+
   /**
    * Handle an incoming webhook request
    */
   async handleWebhook(
     payload: WebexWebhookPayload,
-    signature?: string,
-    _body?: Buffer<ArrayBufferLike>
   ): Promise<OpenClawEnvelope | null> {
-    // Verify webhook signature if secret is configured
-    if (this.config.webhookSecret && signature) {
-      if (!this.verifySignature(payload, signature, _body)) {
-        console.error('Invalid webhook signature:', signature);
-        throw new WebhookValidationError('Invalid webhook signature');
-      }
-    }
 
     // Only handle message created events
     if (payload.resource !== 'messages' || payload.event !== 'created') {
