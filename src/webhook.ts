@@ -216,6 +216,8 @@ export class WebexWebhookHandler {
       event: 'created',
       secret: this.config.webhookSecret,
     });
+    console.info('secret:', this.config.webhookSecret);
+    console.info('messageCreatedWebhook:', messageCreatedWebhook);
     webhooks.push(messageCreatedWebhook);
 
     return webhooks;
@@ -259,7 +261,6 @@ export class WebexWebhookHandler {
       throw new Error(`Failed to create webhook: ${response.status} ${response.statusText} - ${errorText}`);
     }
 
-    console.info('Created webhook:', response.json());
     return response.json() as Promise<WebexWebhook>;
   }
 
