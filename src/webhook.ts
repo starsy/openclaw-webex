@@ -46,23 +46,27 @@ export class WebexWebhookHandler {
     // Verify webhook signature if secret is configured
     if (this.config.webhookSecret && signature) {
       if (!this.verifySignature(payload, signature)) {
+        console.error('Invalid webhook signature:', signature);
         throw new WebhookValidationError('Invalid webhook signature');
       }
     }
 
     // Only handle message created events
     if (payload.resource !== 'messages' || payload.event !== 'created') {
+      console.error('Invalid webhook resource or event:', payload.resource, payload.event);
       return null;
     }
 
     // Ignore messages from the bot itself
     if (payload.data.personId === this.botId) {
+      console.error('Ignoring message from bot itself:', payload.data.personId, this.botId);
       return null;
     }
 
     // Check DM policy
     if (payload.data.roomType === 'direct') {
       if (!this.isAllowedSender(payload.data)) {
+        console.error('Not allowed sender:', payload.data.personEmail);
         return null;
       }
     }
@@ -106,7 +110,7 @@ export class WebexWebhookHandler {
           return false;
         }
         return this.config.allowFrom.includes(data.personId) ||
-               this.config.allowFrom.includes(data.personEmail);
+          this.config.allowFrom.includes(data.personEmail);
       default:
         return false;
     }
@@ -125,6 +129,7 @@ export class WebexWebhookHandler {
     });
 
     if (!response.ok) {
+      console.error('Failed to fetch message:', messageId, response.status, response.statusText);
       throw new Error(`Failed to fetch message: ${response.status} ${response.statusText}`);
     }
 
@@ -252,6 +257,7 @@ export class WebexWebhookHandler {
       throw new Error(`Failed to create webhook: ${response.status} ${response.statusText} - ${errorText}`);
     }
 
+    console.info('Created webhook:', response.json());
     return response.json() as Promise<WebexWebhook>;
   }
 
@@ -269,6 +275,7 @@ export class WebexWebhookHandler {
     if (!response.ok && response.status !== 404) {
       throw new Error(`Failed to delete webhook: ${response.status} ${response.statusText}`);
     }
+    console.info('Deleted webhook:', webhookId);
   }
 
   /**
