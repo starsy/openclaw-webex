@@ -76,25 +76,6 @@ export class WebexWebhookHandler {
   }
 
   /**
-   * Verify webhook signature using HMAC-SHA1
-   */
-  verifySignature(payload: WebexWebhookPayload, signature: string, originalBody?: Buffer<ArrayBufferLike>): boolean {
-    if (!this.config.webhookSecret) {
-      return true;
-    }
-
-    const hmac = crypto.createHmac('sha1', this.config.webhookSecret);
-    console.info('originalBody in verifySignature:', originalBody?.toString('utf-8'));
-    hmac.update(originalBody ?? Buffer.from(JSON.stringify(payload)));
-    const expectedSignature = hmac.digest('hex');
-
-    return crypto.timingSafeEqual(
-      Buffer.from(signature),
-      Buffer.from(expectedSignature)
-    );
-  }
-
-  /**
    * Check if the sender is allowed based on DM policy
    */
   private isAllowedSender(data: WebexWebhookData): boolean {
