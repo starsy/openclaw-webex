@@ -269,7 +269,7 @@ export interface WebexChannelPlugin {
   send(message: OpenClawOutboundMessage): Promise<WebexMessage>;
 
   /** Handle incoming webhook */
-  handleWebhook(payload: WebexWebhookPayload, signature?: string): Promise<OpenClawEnvelope | null>;
+  handleWebhook(payload: WebexWebhookPayload): Promise<OpenClawEnvelope | null>;
 
   /** Register webhooks with Webex */
   registerWebhooks(): Promise<WebexWebhook[]>;
