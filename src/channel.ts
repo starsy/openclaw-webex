@@ -149,11 +149,12 @@ export class WebexChannel implements WebexChannelPlugin {
    */
   async handleWebhook(
     payload: WebexWebhookPayload,
-    signature?: string
+    signature?: string,
+    originalBody?: string
   ): Promise<OpenClawEnvelope | null> {
     this.ensureInitialized();
 
-    const envelope = await this.webhookHandler!.handleWebhook(payload, signature);
+    const envelope = await this.webhookHandler!.handleWebhook(payload, signature, originalBody);
 
     if (envelope) {
       // Notify all registered handlers

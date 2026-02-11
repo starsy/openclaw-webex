@@ -4,6 +4,7 @@
 
 import * as crypto from 'crypto';
 import fetch from 'node-fetch';
+
 import type {
   WebexChannelConfig,
   WebexWebhookPayload,
@@ -41,11 +42,12 @@ export class WebexWebhookHandler {
    */
   async handleWebhook(
     payload: WebexWebhookPayload,
-    signature?: string
+    signature?: string,
+    originalBody?: string
   ): Promise<OpenClawEnvelope | null> {
     // Verify webhook signature if secret is configured
     if (this.config.webhookSecret && signature) {
-      if (!this.verifySignature(payload, signature)) {
+      if (!this.verifySignature(payload, signature, originalBody)) {
         console.error('Invalid webhook signature:', signature);
         throw new WebhookValidationError('Invalid webhook signature');
       }
@@ -81,13 +83,13 @@ export class WebexWebhookHandler {
   /**
    * Verify webhook signature using HMAC-SHA1
    */
-  verifySignature(payload: WebexWebhookPayload, signature: string): boolean {
+  verifySignature(payload: WebexWebhookPayload, signature: string, originalBody?: string): boolean {
     if (!this.config.webhookSecret) {
       return true;
     }
 
     const hmac = crypto.createHmac('sha1', this.config.webhookSecret);
-    hmac.update(JSON.stringify(payload));
+    hmac.update(originalBody ?? JSON.stringify(payload));
     const expectedSignature = hmac.digest('hex');
 
     return crypto.timingSafeEqual(

@@ -102,7 +102,7 @@ export function registerWebexWebhookTarget(
   };
 }
 
-async function readJsonBody(req: IncomingMessage, maxBytes: number): Promise<{ ok: boolean; value?: unknown; error?: string }> {
+async function readJsonBody(req: IncomingMessage, maxBytes: number): Promise<{ ok: boolean; value?: unknown; originalBody?: string; error?: string }> {
   const chunks: Buffer[] = [];
   let total = 0;
   return await new Promise((resolve) => {
@@ -119,7 +119,7 @@ async function readJsonBody(req: IncomingMessage, maxBytes: number): Promise<{ o
       try {
         const body = Buffer.concat(chunks).toString("utf-8");
         const parsed = JSON.parse(body);
-        resolve({ ok: true, value: parsed });
+        resolve({ ok: true, value: parsed, originalBody: body });
       } catch {
         resolve({ ok: false, error: "invalid json" });
       }
@@ -169,13 +169,13 @@ export function createWebhookHandler(): (req: IncomingMessage, res: ServerRespon
       const signature = req.headers["x-spark-signature"] as string | undefined;
       const payload = body.value as WebexWebhookPayload;
 
-      const envelope = await webhookHandler.handleWebhook(payload, signature);
+      const envelope = await webhookHandler.handleWebhook(payload, signature, body.originalBody);
 
       if (envelope && pluginRuntime) {
         // Load config using the plugin runtime (cast to any for internal API access)
         const runtime = pluginRuntime as any;
         const cfg = runtime.config?.loadConfig?.() ?? {};
-        
+
         // Build the context payload for OpenClaw's message pipeline
         const ctxPayload = {
           Body: envelope.content.text ?? "",
@@ -199,11 +199,11 @@ export function createWebhookHandler(): (req: IncomingMessage, res: ServerRespon
 
         // Use the plugin runtime's dispatch function (cast to any for internal API)
         const dispatchReply = runtime.channel?.reply?.dispatchReplyWithBufferedBlockDispatcher;
-        
+
         if (dispatchReply) {
           // Create a sender for replies
           const sender = new WebexSender(account.config);
-          
+
           await dispatchReply({
             ctx: ctxPayload,
             cfg,
