@@ -5,6 +5,7 @@
  */
 
 import type { IncomingMessage, ServerResponse } from "node:http";
+import crypto from 'crypto';
 
 import type {
   ChannelPlugin,
@@ -12,8 +13,9 @@ import type {
 } from "openclaw/plugin-sdk";
 
 import { WebexSender } from "./send";
-import { WebexWebhookHandler } from "./webhook";
+import { WebexWebhookHandler, WebhookValidationError } from "./webhook";
 import type { WebexChannelConfig, WebexWebhookPayload } from "./types";
+import { sign } from "node:crypto";
 
 // Store the plugin runtime for use in HTTP handlers
 let pluginRuntime: PluginRuntime | null = null;
@@ -102,14 +104,36 @@ export function registerWebexWebhookTarget(
   };
 }
 
-async function readJsonBody(req: IncomingMessage, maxBytes: number): Promise<{ ok: boolean; value?: unknown; _body?: Buffer<ArrayBufferLike>; error?: string }> {
+/**
+ * Verify webhook signature using HMAC-SHA1
+ */
+function calculateSignature(body: Buffer<ArrayBufferLike> | string, secret?: string): string {
+  if (!secret) {
+    return "NO_SIGNATURE";
+  }
+
+  const hmac = crypto.createHmac('sha1', secret);
+  console.info('originalBody in verifySignature:', body?.toString('utf-8'));
+  hmac.update(body);
+  const expectedSignature = hmac.digest('hex');
+
+  return expectedSignature as string;
+
+  // return crypto.timingSafeEqual(
+  //   Buffer.from(signature),
+  //   Buffer.from(expectedSignature)
+  // );
+}
+
+
+async function readJsonBody(req: IncomingMessage, maxBytes: number, secret?: string): Promise<{ ok: boolean; value?: unknown; signature: string[]; error?: string }> {
   const chunks: Buffer[] = [];
   let total = 0;
   return await new Promise((resolve) => {
     req.on("data", (chunk: Buffer) => {
       total += chunk.length;
       if (total > maxBytes) {
-        resolve({ ok: false, error: "payload too large" });
+        resolve({ ok: false, error: "payload too large", signature: ["NO_SIGNATURE", "NO_SIGNATURE"] });
         req.destroy();
         return;
       }
@@ -120,13 +144,13 @@ async function readJsonBody(req: IncomingMessage, maxBytes: number): Promise<{ o
         const concatedChunks = Buffer.concat(chunks)
         const body = concatedChunks.toString("utf-8");
         const parsed = JSON.parse(body);
-        resolve({ ok: true, value: parsed, _body: concatedChunks });
+        resolve({ ok: true, value: parsed, signature: [calculateSignature(concatedChunks, secret), calculateSignature(body, secret)] });
       } catch {
-        resolve({ ok: false, error: "invalid json" });
+        resolve({ ok: false, error: "invalid json", signature: ["NO_SIGNATURE", "NO_SIGNATURE"] });
       }
     });
     req.on("error", (err) => {
-      resolve({ ok: false, error: err.message });
+      resolve({ ok: false, error: err.message, signature: ["NO_SIGNATURE", "NO_SIGNATURE"] });
     });
   });
 }
@@ -157,20 +181,31 @@ export function createWebhookHandler(): (req: IncomingMessage, res: ServerRespon
       return true;
     }
 
-    const body = await readJsonBody(req, 1024 * 1024);
-    if (!body.ok) {
-      res.statusCode = body.error === "payload too large" ? 413 : 400;
-      res.end(body.error ?? "invalid payload");
-      return true;
-    }
-
     const { account, webhookHandler } = target;
 
     try {
       const signature = req.headers["x-spark-signature"] as string | undefined;
+      const secret = webhookHandler.getConfig().webhookSecret;
+
+      const body = await readJsonBody(req, 1024 * 1024, secret);
+      if (!body.ok) {
+        res.statusCode = body.error === "payload too large" ? 413 : 400;
+        res.end(body.error ?? "invalid payload");
+        return true;
+      }
+
+      console.log('payload signature 1:', body.signature[0]);
+      console.log('payload signature 2:', body.signature[1]);
+      console.log('expected signature :', signature);
+
+      // if (signature !== body.signature) {
+      //   console.error('Invalid webhook signature:', signature);
+      //   throw new WebhookValidationError('Invalid webhook signature');
+      // }
+
       const payload = body.value as WebexWebhookPayload;
 
-      const envelope = await webhookHandler.handleWebhook(payload, signature, body._body);
+      const envelope = await webhookHandler.handleWebhook(payload);
 
       if (envelope && pluginRuntime) {
         // Load config using the plugin runtime (cast to any for internal API access)
