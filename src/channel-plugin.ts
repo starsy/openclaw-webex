@@ -111,12 +111,7 @@ function calculateSignature(body: Buffer<ArrayBufferLike> | string, secret?: str
   if (!secret) {
     return "";
   }
-
-  const hmac = crypto.createHmac('sha1', secret);
-  hmac.update(body);
-  const expectedSignature = hmac.digest('hex');
-
-  return expectedSignature as string;
+  return crypto.createHmac('sha1', secret).update(body).digest('hex') as string;
 }
 
 

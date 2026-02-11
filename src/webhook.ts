@@ -56,7 +56,7 @@ export class WebexWebhookHandler {
 
     // Ignore messages from the bot itself
     if (payload.data.personId === this.botId) {
-      console.error('Ignoring message from bot itself:', payload.data.personId, this.botId);
+      console.debug('Ignoring message from bot itself');
       return null;
     }
 
