@@ -43,11 +43,11 @@ export class WebexWebhookHandler {
   async handleWebhook(
     payload: WebexWebhookPayload,
     signature?: string,
-    originalBody?: string
+    _body?: Buffer<ArrayBufferLike>
   ): Promise<OpenClawEnvelope | null> {
     // Verify webhook signature if secret is configured
     if (this.config.webhookSecret && signature) {
-      if (!this.verifySignature(payload, signature, originalBody)) {
+      if (!this.verifySignature(payload, signature, _body)) {
         console.error('Invalid webhook signature:', signature);
         throw new WebhookValidationError('Invalid webhook signature');
       }
@@ -83,13 +83,14 @@ export class WebexWebhookHandler {
   /**
    * Verify webhook signature using HMAC-SHA1
    */
-  verifySignature(payload: WebexWebhookPayload, signature: string, originalBody?: string): boolean {
+  verifySignature(payload: WebexWebhookPayload, signature: string, originalBody?: Buffer<ArrayBufferLike>): boolean {
     if (!this.config.webhookSecret) {
       return true;
     }
 
     const hmac = crypto.createHmac('sha1', this.config.webhookSecret);
-    hmac.update(originalBody ?? JSON.stringify(payload));
+    console.info('originalBody in verifySignature:', originalBody?.toString('utf-8'));
+    hmac.update(originalBody ?? Buffer.from(JSON.stringify(payload)));
     const expectedSignature = hmac.digest('hex');
     console.log('incoming signature:', signature);
     console.log('expected signature:', expectedSignature);

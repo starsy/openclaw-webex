@@ -102,7 +102,7 @@ export function registerWebexWebhookTarget(
   };
 }
 
-async function readJsonBody(req: IncomingMessage, maxBytes: number): Promise<{ ok: boolean; value?: unknown; originalBody?: string; error?: string }> {
+async function readJsonBody(req: IncomingMessage, maxBytes: number): Promise<{ ok: boolean; value?: unknown; _body?: Buffer<ArrayBufferLike>; error?: string }> {
   const chunks: Buffer[] = [];
   let total = 0;
   return await new Promise((resolve) => {
@@ -117,9 +117,10 @@ async function readJsonBody(req: IncomingMessage, maxBytes: number): Promise<{ o
     });
     req.on("end", () => {
       try {
-        const body = Buffer.concat(chunks).toString("utf-8");
+        const concatedChunks = Buffer.concat(chunks)
+        const body = concatedChunks.toString("utf-8");
         const parsed = JSON.parse(body);
-        resolve({ ok: true, value: parsed, originalBody: body });
+        resolve({ ok: true, value: parsed, _body: concatedChunks });
       } catch {
         resolve({ ok: false, error: "invalid json" });
       }
@@ -169,7 +170,7 @@ export function createWebhookHandler(): (req: IncomingMessage, res: ServerRespon
       const signature = req.headers["x-spark-signature"] as string | undefined;
       const payload = body.value as WebexWebhookPayload;
 
-      const envelope = await webhookHandler.handleWebhook(payload, signature, body.originalBody);
+      const envelope = await webhookHandler.handleWebhook(payload, signature, body._body);
 
       if (envelope && pluginRuntime) {
         // Load config using the plugin runtime (cast to any for internal API access)
