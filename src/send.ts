@@ -82,7 +82,7 @@ export class WebexSender {
   ): Promise<WebexMessage> {
     return this.createMessage({
       roomId,
-      markdown: text
+      markdown: text,
       files: [fileUrl],
     });
   }
