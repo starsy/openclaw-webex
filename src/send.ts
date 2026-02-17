@@ -158,6 +158,8 @@ export class WebexSender {
       request.roomId = to;
     }
 
+    console.log('message.content to send:', message.content);
+
     // Set content
     if (message.content.text) {
       request.text = message.content.text;
@@ -312,8 +314,8 @@ export class WebexSender {
     }
     // Retry network errors
     return error.message.includes('ECONNRESET') ||
-           error.message.includes('ETIMEDOUT') ||
-           error.message.includes('ENOTFOUND');
+      error.message.includes('ETIMEDOUT') ||
+      error.message.includes('ENOTFOUND');
   }
 
   /**
