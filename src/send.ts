@@ -159,6 +159,8 @@ export class WebexSender {
     }
 
     console.log('message.content to send:', message.content);
+    let err = new Error('trace-stack-error');
+    console.log(err.stack);
 
     // Set content
     if (message.content.text) {
