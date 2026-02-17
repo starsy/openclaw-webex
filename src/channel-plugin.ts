@@ -547,7 +547,7 @@ export const webexPlugin: ChannelPlugin<ResolvedWebexAccount> = {
 
       const result = await sender.send({
         to,
-        content: { text },
+        content: { markdown: text },
         parentId: replyToId,
       });
 
@@ -568,7 +568,7 @@ export const webexPlugin: ChannelPlugin<ResolvedWebexAccount> = {
       const result = await sender.send({
         to,
         content: {
-          text,
+          markdown: text,
           files: mediaUrl ? [mediaUrl] : undefined,
         },
         parentId: replyToId,
