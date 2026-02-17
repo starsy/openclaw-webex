@@ -162,7 +162,7 @@ export class WebexSender {
 
     // Set content
     if (message.content.text) {
-      request.text = message.content.text;
+      request.markdown = message.content.text;
     }
     if (message.content.markdown) {
       request.markdown = message.content.markdown;
