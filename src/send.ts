@@ -48,8 +48,7 @@ export class WebexSender {
   async sendToRoom(roomId: string, text: string, markdown?: string): Promise<WebexMessage> {
     return this.createMessage({
       roomId,
-      text,
-      markdown,
+      markdown: markdown ? markdown : text,
     });
   }
 
@@ -59,8 +58,7 @@ export class WebexSender {
   async sendDirectById(personId: string, text: string, markdown?: string): Promise<WebexMessage> {
     return this.createMessage({
       toPersonId: personId,
-      text,
-      markdown,
+      markdown: markdown ? markdown : text,
     });
   }
 
@@ -70,8 +68,7 @@ export class WebexSender {
   async sendDirectByEmail(email: string, text: string, markdown?: string): Promise<WebexMessage> {
     return this.createMessage({
       toPersonEmail: email,
-      text,
-      markdown,
+      markdown: markdown ? markdown : text,
     });
   }
 
@@ -85,7 +82,7 @@ export class WebexSender {
   ): Promise<WebexMessage> {
     return this.createMessage({
       roomId,
-      text,
+      markdown: text
       files: [fileUrl],
     });
   }
@@ -102,8 +99,7 @@ export class WebexSender {
     return this.createMessage({
       roomId,
       parentId,
-      text,
-      markdown,
+      markdown: markdown ? markdown : text,
     });
   }
 
@@ -159,8 +155,8 @@ export class WebexSender {
     }
 
     console.log('message.content to send:', message.content);
-    let err = new Error('trace-stack-error');
-    console.log(err.stack);
+    // let err = new Error('trace-stack-error');
+    // console.log(err.stack);
 
     // Set content
     if (message.content.text) {

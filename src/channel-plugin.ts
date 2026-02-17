@@ -242,7 +242,7 @@ export function createWebhookHandler(): (req: IncomingMessage, res: ServerRespon
                 if (payload.text) {
                   await sender.send({
                     to: envelope.conversationId,
-                    content: { text: payload.text },
+                    content: { markdown: payload.text },
                     parentId: envelope.metadata.parentId,
                   });
                 }
